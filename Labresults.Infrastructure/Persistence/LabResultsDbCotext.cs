@@ -1,11 +1,11 @@
-﻿using LabResults.Entities;
+﻿using LabResults.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace LabResults.Persistence
+namespace Labresults.Infrastructure.Persistence
 {
     public class LabResultsDbCotext : DbContext
     {
-        public LabResultsDbCotext(DbContextOptions options) : base(options)
+        public LabResultsDbCotext(DbContextOptions<LabResultsDbCotext> options) : base(options)
         {
         }
 
@@ -15,38 +15,39 @@ namespace LabResults.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Patient>()
                 .HasKey(p => p.Id);
-
 
             modelBuilder.Entity<Sample>()
                 .HasKey(s => s.Id);
 
+            modelBuilder.Entity<TestResult>()
+               .HasKey(t => t.Id);
+
             modelBuilder.Entity<Sample>()
                 .HasOne<Patient>()
-                .WithMany()
+                .WithMany(p => p.Samples)
                 .HasForeignKey(s => s.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<TestResult>()
+                .HasOne<Sample>()
+                .WithMany(s => s.TestResults)
+                .HasForeignKey(t => t.SampleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //Indexes
             modelBuilder.Entity<Sample>()
                .HasIndex(s => s.Barcode)
                .IsUnique();
 
-            modelBuilder.Entity<Sample>()
-                .HasIndex(s => s.PatientId);
-
-
-            modelBuilder.Entity<TestResult>()
-                .HasKey(t => t.Id);
-
-            modelBuilder.Entity<TestResult>()
-                .HasOne<Sample>()
-                .WithMany()
-                .HasForeignKey(t => t.SampleId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             modelBuilder.Entity<TestResult>()
                 .HasIndex(t => t.SampleId);
+
+            modelBuilder.Entity<Sample>()
+                .HasIndex(s => s.PatientId);
         }
     }
 }

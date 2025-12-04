@@ -1,10 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace LabResults.Entities
+﻿namespace LabResults.Domain.Entities
 {
     public class TestResult
     {
-        [Key]
         public int Id { get; set; }
 
         // Test details only

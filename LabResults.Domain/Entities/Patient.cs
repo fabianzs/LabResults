@@ -1,10 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace LabResults.Entities
+﻿namespace LabResults.Domain.Entities
 {
     public class Patient
     {
-        public long Id { get; set; }
+        public int Id { get; set; }
 
         public string PatientName { get; set; }
         public DateTime DateOfBirth { get; set; }
