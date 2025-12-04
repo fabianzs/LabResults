@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Labresults.Infrastructure.Migrations
 {
     [DbContext(typeof(LabResultsDbCotext))]
-    [Migration("20251204222901_InitialMigration")]
+    [Migration("20251204224033_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />

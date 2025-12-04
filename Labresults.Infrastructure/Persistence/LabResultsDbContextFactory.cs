@@ -8,7 +8,7 @@ namespace Labresults.Infrastructure.Persistence
         public LabResultsDbCotext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<LabResultsDbCotext>();
-            optionsBuilder.UseSqlite();
+            optionsBuilder.UseSqlite(x => x.MigrationsHistoryTable("__EFMigrationsHistory"));
 
             return new LabResultsDbCotext(optionsBuilder.Options);
         }
