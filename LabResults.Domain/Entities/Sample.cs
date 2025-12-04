@@ -7,8 +7,8 @@
         // Sample/Collection identifiers
         public long Barcode { get; set; }
         public int ClinicNo { get; set; }
-        public DateTime CollectionDate { get; set; }
-        public TimeSpan CollectionTime { get; set; }
+        public DateOnly CollectionDate { get; set; }
+        public TimeOnly CollectionTime { get; set; }
 
         // Patient relationship
         public int PatientId { get; set; }
