@@ -1,6 +1,6 @@
 ﻿using LabResults.Domain.Models;
 
-namespace LabResults
+namespace LabResults.Domain.Interfaces
 {
     public interface IDataReader
     {

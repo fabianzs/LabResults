@@ -1,4 +1,5 @@
-﻿using LabResults.Domain.Models;
+﻿using LabResults.Domain.Interfaces;
+using LabResults.Domain.Models;
 using System.Reflection;
 
 namespace LabResults.DataLoader

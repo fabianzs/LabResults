@@ -1,6 +1,6 @@
 ﻿using Labresults.Infrastructure.Persistence;
-using LabResults;
 using LabResults.DataLoader;
+using LabResults.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +20,6 @@ filePath = filePath.Trim();
 
 
 // --- 2. Configure the Host and Services (DI) ---
-// We pass empty args here since we already consumed the file path input.
 var host = Host.CreateDefaultBuilder(Array.Empty<string>())
     .ConfigureServices((context, services) =>
     {
@@ -32,7 +31,7 @@ var host = Host.CreateDefaultBuilder(Array.Empty<string>())
 
         // Add the Data Loader service
         services.AddTransient<IDataReader, LabDataReader>();
-        services.AddTransient<IDataReader, LabDataReader>();
+        services.AddTransient<IDataWriter, LabDataWriter>();
     })
     .Build();
 
@@ -41,12 +40,12 @@ using (var scope = host.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
 
-    // Perform necessary setup for In-Memory DB (or apply migrations for a persistent DB)
     var context = serviceProvider.GetRequiredService<LabResultsDbCotext>();
-    context.Database.EnsureCreated(); // Use Migrate() for persistent DBs
+    Console.WriteLine("Applying database migrations...");
+    context.Database.Migrate();
 
     // Get the loader and run the import
-    var dataLoader = serviceProvider.GetRequiredService<LabDataReader>();
+    var dataLoader = serviceProvider.GetRequiredService<IDataReader>();
 
     Console.WriteLine($"Starting data load from: {filePath}");
     try

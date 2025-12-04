@@ -1,5 +1,6 @@
 ﻿using Labresults.Infrastructure.Persistence;
 using LabResults.Domain.Entities;
+using LabResults.Domain.Interfaces;
 using LabResults.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -49,9 +50,9 @@ namespace LabResults.DataLoader
                     sample = new Sample
                     {
                         Barcode = barcode,
-                        ClinicNo = int.Parse(rawData.ClinicNo), // Assuming ClinicNo is always valid
-                        CollectionDate = DateTime.ParseExact(rawData.CollectionDate, DateFormat, CultureInfo.InvariantCulture),
-                        CollectionTime = TimeSpan.ParseExact(rawData.CollectionTime, TimeFormat, CultureInfo.InvariantCulture),
+                        ClinicNo = int.Parse(rawData.ClinicNo),
+                        CollectionDate = DateOnly.ParseExact(rawData.CollectionDate, DateFormat),
+                        CollectionTime = TimeOnly.ParseExact(rawData.CollectionTime, TimeFormat, CultureInfo.InvariantCulture),
                         PatientId = patient.Id
                     };
                     patient.Samples.Add(sample);
