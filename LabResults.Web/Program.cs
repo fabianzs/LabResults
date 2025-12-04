@@ -1,8 +1,5 @@
 using Labresults.Infrastructure.Persistence;
-using LabResults;
-using LabResults.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
