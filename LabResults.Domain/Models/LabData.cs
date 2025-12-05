@@ -11,7 +11,7 @@
         // Patient fields
         public string PatientId { get; set; }
         public string PatientName { get; set; }
-        public string DateOfBirth { get; set; }
+        public string DOB { get; set; }
         public string Gender { get; set; }
 
         // TestResult fields
