@@ -55,3 +55,16 @@ nunit-*.xml
 
 .copilot/
 .vs/
+
+# Generic SQLite file extensions
+*.db
+*.sqlite
+*.sqlite3
+
+# SQLite journal files (used for transactional integrity)
+*.db-journal
+*.sqlite-journal
+*.db-wal
+*.sqlite-wal
+*.db-shm
+*.sqlite-shm

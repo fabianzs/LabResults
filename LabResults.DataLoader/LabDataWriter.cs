@@ -26,8 +26,12 @@ namespace LabResults.DataLoader
                 if (!long.TryParse(rawData.Barcode, out long barcode)) continue;
 
                 //Find or Create Patient
-                var patient = await _context.Patients
-                    .SingleOrDefaultAsync(p => p.Id == patientId);
+                var patient = _context.Patients.Local.FirstOrDefault(p => p.Id == patientId);
+                if (patient == null)
+                {
+                    patient = await _context.Patients
+                        .SingleOrDefaultAsync(p => p.Id == patientId);
+                }
 
                 if (patient == null)
                 {
@@ -35,15 +39,18 @@ namespace LabResults.DataLoader
                     {
                         Id = patientId,
                         PatientName = rawData.PatientName,
-                        DateOfBirth = DateTime.ParseExact(rawData.DateOfBirth, DateFormat, CultureInfo.InvariantCulture),
+                        DateOfBirth = DateTime.ParseExact(rawData.DOB, DateFormat, CultureInfo.InvariantCulture),
                         Gender = rawData.Gender
                     };
                     _context.Patients.Add(patient);
                 }
 
                 //Find or Create Sample (using Barcode)
-                var sample = await _context.Samples
-                    .SingleOrDefaultAsync(s => s.Barcode == barcode);
+                var sample = _context.Samples.Local.FirstOrDefault(s => s.Barcode == barcode);
+                if(sample == null)
+                {
+                    sample = await _context.Samples.SingleOrDefaultAsync(s => s.Barcode == barcode);
+                }
 
                 if (sample == null)
                 {
@@ -59,22 +66,47 @@ namespace LabResults.DataLoader
                 }
 
                 //TestResult
-                var testResult = new TestResult
+                var existingResult = sample.TestResults.FirstOrDefault(tr => tr.TestCode == rawData.TestCode);
+
+                // If not found in the local, in-memory collection, check the database.
+                if (existingResult == null)
                 {
-                    TestCode = rawData.TestCode,
-                    TestName = rawData.TestName,
-                    Result = rawData.Result,
-                    Unit = rawData.Unit,
+                    existingResult = await _context.TestResults
+                        .SingleOrDefaultAsync(tr => sample.Barcode == barcode &&
+                                                    tr.TestCode == rawData.TestCode);
+                }
 
-                    // Re-use the helper for parsing nullable decimals
-                    RefRangeLow = ParseNullableDecimal(rawData.RefRangeLow),
-                    RefRangeHigh = ParseNullableDecimal(rawData.RefRangeHigh),
+                if (existingResult != null)
+                {
+                    // --- UPDATE existing result ---
+                    // The result exists either in memory or in the database. Update its fields.
+                    existingResult.Result = rawData.Result;
+                    existingResult.Unit = rawData.Unit;
+                    existingResult.RefRangeLow = ParseNullableDecimal(rawData.RefRangeLow);
+                    existingResult.RefRangeHigh = ParseNullableDecimal(rawData.RefRangeHigh);
+                    existingResult.Note = rawData.Note;
+                    existingResult.NonSpecRefs = rawData.NonSpecRefs;
 
-                    Note = rawData.Note,
-                    NonSpecRefs = rawData.NonSpecRefs,
-                    SampleId = sample.Id
-                };
-                sample.TestResults.Add(testResult);
+                    // EF Core's Change Tracker is now handling the 'Modified' state.
+                }
+                else
+                {
+                    // --- CREATE new result ---
+                    var testResult = new TestResult
+                    {
+                        TestCode = rawData.TestCode,
+                        TestName = rawData.TestName,
+                        Result = rawData.Result,
+                        Unit = rawData.Unit,
+                        RefRangeLow = ParseNullableDecimal(rawData.RefRangeLow),
+                        RefRangeHigh = ParseNullableDecimal(rawData.RefRangeHigh),
+                        Note = rawData.Note,
+                        NonSpecRefs = rawData.NonSpecRefs,
+                        SampleId = sample.Id // This may be 0, but EF Core will fill it on SaveChanges
+                    };
+                    // Add the new result to the Sample's collection, ensuring it's tracked.
+                    sample.TestResults.Add(testResult);
+                }
             }
 
             await _context.SaveChangesAsync();

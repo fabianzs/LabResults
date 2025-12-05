@@ -7,14 +7,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 Console.Write("Enter the full path to the data file (e.g., C:\\data\\lab_results.txt): ");
-string filePath = Console.ReadLine();
+//string filePath = Console.ReadLine();
 
-if (string.IsNullOrWhiteSpace(filePath))
-{
-    Console.WriteLine("Error: File path cannot be empty. Exiting.");
-    return;
-}
+//TODO
+//if (string.IsNullOrWhiteSpace(filePath))
+//{
+//    Console.WriteLine("Error: File path cannot be empty. Exiting.");
+//    return;
+//}
 
+//For testing
+var filePath = @"C:\IT projects\Diaverum project\Software Developer Test - Appendix Q10.txt";
 // Ensure the path is clean, especially if running on Unix-like systems
 filePath = filePath.Trim();
 
@@ -45,13 +48,15 @@ using (var scope = host.Services.CreateScope())
     context.Database.Migrate();
 
     // Get the loader and run the import
-    var dataLoader = serviceProvider.GetRequiredService<IDataReader>();
+    var dataReader = serviceProvider.GetRequiredService<IDataReader>();
+    var dataWriter = serviceProvider.GetRequiredService<IDataWriter>();
 
     Console.WriteLine($"Starting data load from: {filePath}");
     try
     {
         // Pass the user-provided path to the loading method
-        await dataLoader.ReadDataFromFileAsync(filePath);
+        var results = await dataReader.ReadDataFromFileAsync(filePath);
+        await dataWriter.ProcessAndSaveDataAsync(results!.ToList());
         Console.WriteLine("✅ Data loading complete! Changes saved to the database.");
     }
     catch (FileNotFoundException)
