@@ -39,7 +39,7 @@ namespace LabResults.DataLoader
                     {
                         Id = patientId,
                         PatientName = rawData.PatientName,
-                        DateOfBirth = DateTime.ParseExact(rawData.DOB, DateFormat, CultureInfo.InvariantCulture),
+                        DateOfBirth = DateOnly.ParseExact(rawData.DOB, DateFormat, CultureInfo.InvariantCulture),
                         Gender = rawData.Gender
                     };
                     _context.Patients.Add(patient);
