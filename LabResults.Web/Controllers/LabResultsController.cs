@@ -8,14 +8,12 @@ namespace LabResults.Controllers
     [Route("api/patients/{patientId:int}")]
     public class LabResultsController : ControllerBase
     {
-        private readonly ILogger<LabResultsController> _logger;
         private readonly ITestResultReader _testResultReader;
 
-        public LabResultsController(ILogger<LabResultsController> logger)
+        public LabResultsController(ITestResultReader testResultsReader)
         {
-            _logger = logger;
+            _testResultReader = testResultsReader;
         }
-
      
         [HttpGet("labresults")]
         public async Task<IEnumerable<TestResultModel>> GetLabresults(int patientId, CancellationToken cancellationToken)
