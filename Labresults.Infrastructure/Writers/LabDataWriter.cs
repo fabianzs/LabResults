@@ -5,7 +5,7 @@ using LabResults.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
-namespace LabResults.DataLoader
+namespace Labresults.Infrastructure.Writers
 {
     public class LabDataWriter : IDataWriter
     {
@@ -67,8 +67,6 @@ namespace LabResults.DataLoader
 
                 //TestResult
                 var existingResult = sample.TestResults.FirstOrDefault(tr => tr.TestCode == rawData.TestCode);
-
-                // If not found in the local, in-memory collection, check the database.
                 if (existingResult == null)
                 {
                     existingResult = await _context.TestResults
@@ -78,20 +76,15 @@ namespace LabResults.DataLoader
 
                 if (existingResult != null)
                 {
-                    // --- UPDATE existing result ---
-                    // The result exists either in memory or in the database. Update its fields.
                     existingResult.Result = rawData.Result;
                     existingResult.Unit = rawData.Unit;
                     existingResult.RefRangeLow = ParseNullableDecimal(rawData.RefRangeLow);
                     existingResult.RefRangeHigh = ParseNullableDecimal(rawData.RefRangeHigh);
                     existingResult.Note = rawData.Note;
                     existingResult.NonSpecRefs = rawData.NonSpecRefs;
-
-                    // EF Core's Change Tracker is now handling the 'Modified' state.
                 }
                 else
                 {
-                    // --- CREATE new result ---
                     var testResult = new TestResult
                     {
                         TestCode = rawData.TestCode,
@@ -102,9 +95,9 @@ namespace LabResults.DataLoader
                         RefRangeHigh = ParseNullableDecimal(rawData.RefRangeHigh),
                         Note = rawData.Note,
                         NonSpecRefs = rawData.NonSpecRefs,
-                        SampleId = sample.Id // This may be 0, but EF Core will fill it on SaveChanges
+                        SampleId = sample.Id 
                     };
-                    // Add the new result to the Sample's collection, ensuring it's tracked.
+
                     sample.TestResults.Add(testResult);
                 }
             }
@@ -112,7 +105,6 @@ namespace LabResults.DataLoader
             await _context.SaveChangesAsync();
         }
 
-        // (Keep the ParseNullableDecimal helper function)
         private decimal? ParseNullableDecimal(string field)
         {
             if (string.IsNullOrWhiteSpace(field))

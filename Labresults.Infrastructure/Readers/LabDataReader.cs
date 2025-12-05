@@ -1,17 +1,19 @@
-﻿using LabResults.Domain.Interfaces;
+﻿using LabResults.DataLoader;
+using LabResults.Domain.Interfaces;
 using LabResults.Domain.Models;
+using Microsoft.Extensions.Options;
 using System.Reflection;
 
-namespace LabResults.DataLoader
+namespace Labresults.Infrastructure.Readers
 {
     public class LabDataReader : IDataReader
     {
-        private static readonly string[] ExpectedHeaders = new[]
+        private readonly string[] _expectedHeaders;
+
+        public LabDataReader(IOptions<LabFileSettings> settings)
         {
-            "CLINIC_NO", "BARCODE", "PATIENT_ID", "PATIENT_NAME", "DOB", "GENDER",
-            "COLLECTIONDATE", "COLLECTIONTIME", "TESTCODE", "TESTNAME", "RESULT",
-            "UNIT", "REFRANGELOW", "REFRANGEHIGH", "NOTE", "NONSPECREFS"
-        };
+            _expectedHeaders = settings.Value.ExpectedHeaders;
+        }
 
         public async Task<IEnumerable<LabData>?> ReadDataFromFileAsync(string filePath)
         {
@@ -34,7 +36,7 @@ namespace LabResults.DataLoader
                     {
                         continue; // Skip comments and empty lines
                     }
-                    // The first non-comment line is the header
+
                     headerLine = line;
                     break;
                 }
@@ -47,34 +49,32 @@ namespace LabResults.DataLoader
                 // 2. Validate the Header
                 var actualHeaders = headerLine.Split('|', StringSplitOptions.TrimEntries);
 
-                if (actualHeaders.Length != ExpectedHeaders.Length)
+                if (actualHeaders.Length != _expectedHeaders.Length)
                 {
-                    throw new InvalidOperationException($"Header validation failed: Expected {ExpectedHeaders.Length} columns but found {actualHeaders.Length}.");
+                    throw new InvalidOperationException($"Header validation failed: Expected {_expectedHeaders.Length} columns but found {actualHeaders.Length}.");
                 }
 
                 var propertyMap = BuildPropertyMap(actualHeaders);
 
-                for (int i = 0; i < ExpectedHeaders.Length; i++)
+                for (int i = 0; i < _expectedHeaders.Length; i++)
                 {
-                    if (!string.Equals(actualHeaders[i], ExpectedHeaders[i], StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(actualHeaders[i], _expectedHeaders[i], StringComparison.OrdinalIgnoreCase))
                     {
-                        throw new InvalidOperationException($"Header validation failed: Column at index {i} mismatch. Expected '{ExpectedHeaders[i]}' but found '{actualHeaders[i]}'.");
+                        throw new InvalidOperationException($"Header validation failed: Column at index {i} mismatch. Expected '{_expectedHeaders[i]}' but found '{actualHeaders[i]}'.");
                     }
                 }
 
-                // Header is validated! Now process the rest of the lines as data.
                 var dataList = new List<LabData>();
 
-                // 3. Process the remaining lines (which are all data lines)
+                // 3. Process data lines
                 while (enumerator.MoveNext())
                 {
                     var line = enumerator.Current;
-                    if (string.IsNullOrWhiteSpace(line)) continue; // Skip empty lines in data
+                    if (string.IsNullOrWhiteSpace(line)) continue;
 
                     var fields = line.Split('|');
                     if (fields.Length != actualHeaders.Length) continue;
 
-                    // Create and populate the LabData object using the dynamic map
                     var rawData = MapFieldsToLabData(fields, propertyMap);
                     dataList.Add(rawData);
                 }
@@ -94,10 +94,8 @@ namespace LabResults.DataLoader
 
             for (int i = 0; i < actualHeaders.Length; i++)
             {
-                // Clean the header name (e.g., remove spaces or convert case if needed)
-                string headerName = actualHeaders[i].Replace("_", ""); // PATIENT_ID -> PATIENTID
+                string headerName = actualHeaders[i].Replace("_", "");
 
-                // Try to find a property on LabData that matches the header name (case-insensitive)
                 var property = labDataType.GetProperty(
                     headerName,
                     BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
@@ -108,7 +106,6 @@ namespace LabResults.DataLoader
                 }
                 else
                 {
-                    // Optional: Throw an error if a header doesn't match a property
                     throw new InvalidOperationException($"Header '{actualHeaders[i]}' does not match any property in the LabData model.");
                 }
             }
@@ -124,10 +121,9 @@ namespace LabResults.DataLoader
 
             foreach (var kvp in propertyMap)
             {
-                int index = kvp.Key;        // Index of the field in the current line
-                PropertyInfo property = kvp.Value; // The C# property to set
+                int index = kvp.Key;
+                PropertyInfo property = kvp.Value;
 
-                // Set the property value (string) from the corresponding field index
                 property.SetValue(rawData, fields[index]);
             }
 

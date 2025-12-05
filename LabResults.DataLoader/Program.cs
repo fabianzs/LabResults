@@ -1,4 +1,6 @@
 ﻿using Labresults.Infrastructure.Persistence;
+using Labresults.Infrastructure.Readers;
+using Labresults.Infrastructure.Writers;
 using LabResults.DataLoader;
 using LabResults.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -7,17 +9,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 Console.Write("Enter the full path to the data file (e.g., C:\\data\\lab_results.txt): ");
-//string filePath = Console.ReadLine();
+string filePath = Console.ReadLine();
 
-//TODO
-//if (string.IsNullOrWhiteSpace(filePath))
-//{
-//    Console.WriteLine("Error: File path cannot be empty. Exiting.");
-//    return;
-//}
+if (string.IsNullOrWhiteSpace(filePath))
+{
+    Console.WriteLine("Error: File path cannot be empty. Exiting.");
+return;
+}
 
-//For testing
-var filePath = @"C:\IT projects\Diaverum project\Software Developer Test - Appendix Q10.txt";
 // Ensure the path is clean, especially if running on Unix-like systems
 filePath = filePath.Trim();
 
@@ -26,19 +25,19 @@ filePath = filePath.Trim();
 var host = Host.CreateDefaultBuilder(Array.Empty<string>())
     .ConfigureServices((context, services) =>
     {
-        // Configure the DbContext (using SQLite In-Memory for this example)
         var connectionString = context.Configuration.GetConnectionString("LabResultsDb");
-
         services.AddDbContext<LabResultsDbCotext>(options =>
             options.UseSqlite(connectionString));
 
-        // Add the Data Loader service
+        services.Configure<LabFileSettings>(context.Configuration.GetSection("LabFileSettings"));
+
+        // Add services
         services.AddTransient<IDataReader, LabDataReader>();
         services.AddTransient<IDataWriter, LabDataWriter>();
     })
     .Build();
 
-// --- 3. Execute the Loading Logic ---
+// --- 3. Execute Logic ---
 using (var scope = host.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
@@ -47,7 +46,6 @@ using (var scope = host.Services.CreateScope())
     Console.WriteLine("Applying database migrations...");
     context.Database.Migrate();
 
-    // Get the loader and run the import
     var dataReader = serviceProvider.GetRequiredService<IDataReader>();
     var dataWriter = serviceProvider.GetRequiredService<IDataWriter>();
 
