@@ -25,6 +25,9 @@ The `LabResults.DataLoader` project is the entry point for data ingestion and sh
 * **Headers Configuration:** The expected header names (`_expectedHeaders`) for file validation are configured via `IOptions<LabFileSettings>` (defined in `appsettings.json`). The file reader is **order-independent**—it can map fields even if the column order changes, as long as all required headers are present.
 * **Persistence:** It uses **Entity Framework Core** with the **SQLite provider** to persist processed data. The location of the SQLite database file (`.db`) is configured in `appsettings.json`.
 
+ **❗ IMPORTANT: Configure Your Location**
+ Make sure to configure your own **local file paths** for the SQLite database (in `appsettings.json`) before running the application.
+
 ### Web API (RESTful Endpoints)
 
 The `LabResults.Web` project exposes the persisted data.
