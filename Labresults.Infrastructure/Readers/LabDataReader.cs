@@ -34,7 +34,7 @@ namespace Labresults.Infrastructure.Readers
                     var line = enumerator.Current;
                     if (line.StartsWith("#") || string.IsNullOrWhiteSpace(line))
                     {
-                        continue; // Skip comments and empty lines
+                        continue;
                     }
 
                     headerLine = line;
@@ -55,14 +55,6 @@ namespace Labresults.Infrastructure.Readers
                 }
 
                 var propertyMap = BuildPropertyMap(actualHeaders);
-
-                for (int i = 0; i < _expectedHeaders.Length; i++)
-                {
-                    if (!string.Equals(actualHeaders[i], _expectedHeaders[i], StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new InvalidOperationException($"Header validation failed: Column at index {i} mismatch. Expected '{_expectedHeaders[i]}' but found '{actualHeaders[i]}'.");
-                    }
-                }
 
                 var dataList = new List<LabData>();
 
@@ -92,23 +84,36 @@ namespace Labresults.Infrastructure.Readers
             var map = new Dictionary<int, PropertyInfo>();
             var labDataType = typeof(LabData);
 
-            for (int i = 0; i < actualHeaders.Length; i++)
+            var actualHeaderMap = actualHeaders
+                .Select((header, index) => new { Header = header.Trim().ToUpperInvariant(), Index = index })
+                .ToDictionary(x => x.Header, x => x.Index);
+
+            for (int i = 0; i < _expectedHeaders.Length; i++)
             {
-                string headerName = actualHeaders[i].Replace("_", "");
+                string expectedHeader = _expectedHeaders[i];
+                string expectedKey = expectedHeader.Trim().ToUpperInvariant();
+
+                if (!actualHeaderMap.TryGetValue(expectedKey, out int actualIndex))
+                {
+                    throw new InvalidOperationException($"Header validation failed: Expected header '{expectedHeader}' was not found in the data file.");
+                }
+
+                string propertyName = expectedHeader.Replace("_", "");
 
                 var property = labDataType.GetProperty(
-                    headerName,
+                    propertyName,
                     BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
                 if (property != null)
                 {
-                    map.Add(i, property);
+                    map.Add(actualIndex, property);
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Header '{actualHeaders[i]}' does not match any property in the LabData model.");
+                    throw new InvalidOperationException($"Configuration Error: Expected header '{expectedHeader}' does not match any property in the LabData model.");
                 }
             }
+
             return map;
         }
 
