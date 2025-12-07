@@ -3,7 +3,6 @@ using Labresults.Infrastructure.Readers;
 using LabResults.Domain.Interfaces;
 using LabResults.Web;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
